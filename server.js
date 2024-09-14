@@ -14,7 +14,7 @@ const upload = multer({ dest: 'uploads/' });
 
 // Function to remove unwanted footers or extra text from the question
 function cleanText(text) {
-  const footerPattern = /PMI PMP Exam "Pass Any Exam\. Any Time\." - www\.actualtests\.com\d*/g;
+  const footerPattern = /PMI PMP Exam "Pass Any Exam\. Any Time\." - www\.actualtests\.com(?:\d+)?/g;
   const pageNumberPattern = /\d+$/g; // Match numbers at the end of the line (likely page numbers)
   return text.replace(footerPattern, '').replace(pageNumberPattern, '').trim();
 }
