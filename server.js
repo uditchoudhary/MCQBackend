@@ -12,13 +12,6 @@ app.use(bodyParser.json());
 
 const upload = multer({ dest: 'uploads/' });
 
-// Function to remove unwanted footers or extra text from the question
-function cleanText(text) {
-  const footerPattern = /PMI PMP Exam "Pass Any Exam\. Any Time\." - www\.actualtests\.com(?:\d+)?/g;
-  const pageNumberPattern = /\d+$/g; // Match numbers at the end of the line (likely page numbers)
-  return text.replace(footerPattern, '').replace(pageNumberPattern, '').trim();
-}
-
 // Function to remove "Answer" or "Explanation" from options
 function cleanOptionText(optionText) {
   // Remove "Answer: X" and trailing whitespace from option text
@@ -36,7 +29,7 @@ function extractMCQsFromText(pdfText) {
   lines.forEach((line) => {
     line = line.trim();
 
-    // Detect question number (e.g., QUESTION NO: 126)
+    if (line.includes("PMI PMP Exam") || line.includes("Pass Any Exam. Any Time.")) return;
     if (line.startsWith('QUESTION NO:')) {
       if (currentMcq.questionNo && currentMcq.question) {
         mcqArray.push(currentMcq); // Save previous MCQ
@@ -56,23 +49,23 @@ function extractMCQsFromText(pdfText) {
 
     // Stop adding to the question if "Explanation:" is found
     if (line.startsWith('Explanation:')) {
-      currentMcq.explanation = cleanText(line.split(':')[1].trim()); // Capture the explanation
+      currentMcq.explanation = line.split(':')[1].trim(); // Capture the explanation
       return; // Skip adding this line to the question
     }
 
     // Add to options or question based on the flag
     if (readingOptions && optionLetter) {
       const optionText = line.replace(/^[A-D]\.\s*/, ''); 
-      currentMcq.options[optionLetter] += cleanOptionText(cleanText(optionText)) + ' ';
+      currentMcq.options[optionLetter] += cleanOptionText(optionText) + ' ';
     } else if (!readingOptions && currentMcq.questionNo) {
       // Add lines to the question until options begin
       const cleanedLine = line.replace(/^QUESTION NO:\s*/, '');
-      currentMcq.question += cleanText(cleanedLine) + ' ';
+      currentMcq.question += (cleanedLine) + ' ';
     }
 
     // Detect answer (e.g., Answer: A)
     if (line.startsWith('Answer:')) {
-      currentMcq.answer = cleanText(line.split(':')[1].trim()); // Capture the answer
+      currentMcq.answer = line.split(':')[1].trim(); // Capture the answer
       readingOptions = false; // Stop reading options after "Answer"
     }
   });
